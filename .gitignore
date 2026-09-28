@@ -1,0 +1,17 @@
+**/node_modules/
+**/dist/
+**/target/
+**/uploads/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log
+.env
+.env.local
+# 本地敏感配置（数据库密码等）勿入库
+**/application-local.yml
+**/application-local.yaml
+tools/wushixiong-import/data/
+tools/_probe_js.py
+tools/_probe_js2.py
