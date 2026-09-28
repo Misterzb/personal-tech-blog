@@ -168,9 +168,9 @@ public class DataInitializer implements CommandLineRunner {
         p1.setName("个人技术博客");
         p1.setSummary("Spring Boot + Vue 3 前后端分离个人博客，含后台发布、专题与开源展示。");
         p1.setTechStack("Java,Spring Boot,Vue 3,MySQL");
-        p1.setGithubUrl("https://github.com");
-        p1.setGiteeUrl("https://gitee.com");
-        p1.setRepoUrl("https://github.com");
+        p1.setGithubUrl("");
+        p1.setGiteeUrl("https://gitee.com/bo_live/personal-tech-blog.git");
+        p1.setRepoUrl("https://gitee.com/bo_live/personal-tech-blog.git");
         p1.setDemoUrl("/");
         p1.setSortOrder(1);
         p1.setIsTop(true);
