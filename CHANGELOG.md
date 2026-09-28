@@ -8,10 +8,12 @@
 
 - 开源配套文件：`LICENSE`（MIT）、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SECURITY.md`
 - 开源项目支持 GitHub / Gitee 双仓库地址
+- 中英双份 README（`README.md` / `README_EN.md`）
 
 ### Changed
 
 - 文章详情页采用左列表 / 中正文 / 右目录三栏阅读布局
+- 文档默认分支改为各平台主分支（GitHub `main`，Gitee `master`）
 
 ## [0.1.0] - 2026-09-28
 

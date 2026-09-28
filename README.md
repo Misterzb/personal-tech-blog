@@ -1,5 +1,7 @@
 # 技术实践笔记 · 个人博客
 
+[English](README_EN.md) | 简体中文
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -9,10 +11,10 @@ Spring Boot 3 + Vue 3 前后端分离个人博客：前台阅读、管理后台�
 
 ## 仓库
 
-| 平台 | 地址 | 默认分支 |
-|------|------|----------|
-| GitHub | https://github.com/Misterzb/personal-tech-blog | `develop` |
-| Gitee | https://gitee.com/bo_live/personal-tech-blog | `develop` |
+| 平台 | 地址 | 主分支 |
+|------|------|--------|
+| GitHub | https://github.com/Misterzb/personal-tech-blog | [`main`](https://github.com/Misterzb/personal-tech-blog/tree/main) |
+| Gitee | https://gitee.com/bo_live/personal-tech-blog | [`master`](https://gitee.com/bo_live/personal-tech-blog/tree/master) |
 
 欢迎 Star / Fork / Issue / PR。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
@@ -33,7 +35,8 @@ blog/
 ├── frontend/    # 用户前台
 ├── admin/       # 管理后台（构建后访问 /admin/）
 ├── deploy/      # docker-compose、nginx、SQL
-└── README.md
+├── README.md    # 中文说明
+└── README_EN.md # English
 ```
 
 ## 本地开发
@@ -47,17 +50,19 @@ cd deploy
 docker compose up -d mysql
 ```
 
-或使用本机 MySQL，执行 [`deploy/sql/schema.sql`](deploy/sql/schema.sql)，并保证账号密码与 `backend/src/main/resources/application.yml` 一致（默认 `root` / `root123`，库名 `blog`）。
+或使用本机 MySQL，执行 [`deploy/sql/schema.sql`](deploy/sql/schema.sql)，并复制配置：
+
+```bash
+cp backend/src/main/resources/application-local.yml.example backend/src/main/resources/application-local.yml
+# 再编辑其中的数据库连接信息
+```
 
 ### 2. 启动后端
 
 ```bash
 cd backend
-# 连接 Docker MySQL(3307)
+# 使用 application-local.yml（请先复制 example）
 mvn spring-boot:run -Dspring-boot.run.profiles=local
-
-# 或连接本机 3306（默认 application.yml）
-mvn spring-boot:run
 ```
 
 首次启动会自动创建管理员与示例数据：
@@ -91,7 +96,7 @@ npm run dev
 
 ### 步骤
 
-1. 将代码上传到服务器（或 `git clone`）。
+1. 将代码上传到服务器（或从对应平台 `git clone` 并检出主分支）。
 2. 安装 Docker 与 Docker Compose。
 3. 构建前端静态资源：
 
