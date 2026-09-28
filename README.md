@@ -1,8 +1,20 @@
 # 技术实践笔记 · 个人博客
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org/)
+
 Spring Boot 3 + Vue 3 前后端分离个人博客：前台阅读、管理后台发文、专题/标签、开源项目、评论审核、RSS/SEO、访问统计。
 
-仓库：[Gitee](https://gitee.com/bo_live/personal-tech-blog)（`develop` 分支）
+## 仓库
+
+| 平台 | 地址 | 默认分支 |
+|------|------|----------|
+| GitHub | https://github.com/Misterzb/personal-tech-blog | `develop` |
+| Gitee | https://gitee.com/bo_live/personal-tech-blog | `develop` |
+
+欢迎 Star / Fork / Issue / PR。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 与 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
 
 ## 技术栈
 
@@ -126,4 +138,6 @@ docker compose up -d --build
 
 ## 许可证
 
-个人项目，按需自用或开源。
+本项目基于 [MIT License](LICENSE) 开源。
+
+安全问题请参阅 [SECURITY.md](SECURITY.md)；变更记录见 [CHANGELOG.md](CHANGELOG.md)。

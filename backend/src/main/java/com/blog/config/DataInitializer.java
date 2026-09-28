@@ -168,9 +168,9 @@ public class DataInitializer implements CommandLineRunner {
         p1.setName("个人技术博客");
         p1.setSummary("Spring Boot + Vue 3 前后端分离个人博客，含后台发布、专题与开源展示。");
         p1.setTechStack("Java,Spring Boot,Vue 3,MySQL");
-        p1.setGithubUrl("");
+        p1.setGithubUrl("https://github.com/Misterzb/personal-tech-blog.git");
         p1.setGiteeUrl("https://gitee.com/bo_live/personal-tech-blog.git");
-        p1.setRepoUrl("https://gitee.com/bo_live/personal-tech-blog.git");
+        p1.setRepoUrl("https://github.com/Misterzb/personal-tech-blog.git");
         p1.setDemoUrl("/");
         p1.setSortOrder(1);
         p1.setIsTop(true);
@@ -180,9 +180,9 @@ public class DataInitializer implements CommandLineRunner {
         p2.setName("Agent 工具箱");
         p2.setSummary("面向业务场景的 Agent 编排与工具调用示例集合。");
         p2.setTechStack("Python,LangChain,FastAPI");
-        p2.setGithubUrl("https://github.com");
-        p2.setGiteeUrl("https://gitee.com");
-        p2.setRepoUrl("https://github.com");
+        p2.setGithubUrl("");
+        p2.setGiteeUrl("");
+        p2.setRepoUrl("");
         p2.setSortOrder(2);
         p2.setIsTop(false);
         projectMapper.insert(p2);
