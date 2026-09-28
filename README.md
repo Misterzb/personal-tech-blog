@@ -2,6 +2,8 @@
 
 Spring Boot 3 + Vue 3 前后端分离个人博客：前台阅读、管理后台发文、专题/标签、开源项目、评论审核、RSS/SEO、访问统计。
 
+仓库：[Gitee](https://gitee.com/bo_live/personal-tech-blog)（`develop` 分支）
+
 ## 技术栈
 
 | 模块 | 技术 |
