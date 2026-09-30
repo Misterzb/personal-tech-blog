@@ -21,5 +21,6 @@ public class ArticleSaveRequest {
     private String seoTitle;
     private String seoDescription;
     private Boolean isTop;
+    private Integer sortOrder;
     private List<Long> tagIds;
 }

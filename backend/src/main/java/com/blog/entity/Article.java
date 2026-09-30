@@ -23,6 +23,8 @@ public class Article {
     private String seoTitle;
     private String seoDescription;
     private Boolean isTop;
+    /** 专题内排序，越小越靠前；0 表示未指定 */
+    private Integer sortOrder;
     private LocalDateTime publishedAt;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

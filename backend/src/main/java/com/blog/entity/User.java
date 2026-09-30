@@ -14,6 +14,8 @@ public class User {
     private String password;
     private String nickname;
     private String avatar;
+    /** 1=首次登录须改密 */
+    private Integer mustChangePassword;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)

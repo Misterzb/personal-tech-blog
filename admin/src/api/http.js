@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import { decryptApiData } from '../utils/apiCrypto'
 
 const http = axios.create({
   baseURL: '',
@@ -15,11 +16,20 @@ http.interceptors.request.use((config) => {
 })
 
 http.interceptors.response.use(
-  (res) => {
+  async (res) => {
     const body = res.data
     if (body && typeof body.code === 'number' && body.code !== 0) {
       ElMessage.error(body.message || '请求失败')
       return Promise.reject(new Error(body.message || '请求失败'))
+    }
+    if (body && body.encrypted && typeof body.data === 'string') {
+      try {
+        body.data = await decryptApiData(body.data)
+        body.encrypted = false
+      } catch (e) {
+        ElMessage.error('响应解密失败，请检查 VITE_API_AES_KEY 是否与后端一致')
+        return Promise.reject(new Error('响应解密失败'))
+      }
     }
     return body
   },

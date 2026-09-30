@@ -204,6 +204,7 @@ def import_one(
         "seoTitle": item["title"],
         "seoDescription": (item.get("summary") or "")[:200],
         "isTop": False,
+        "sortOrder": int(item.get("sortOrder") or 0),
     }
     if item["slug"] in slug_map:
         payload["id"] = slug_map[item["slug"]]

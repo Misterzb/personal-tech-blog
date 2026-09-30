@@ -28,6 +28,7 @@ async function submit() {
 
 async function submitPwd() {
   await changePassword(pwd)
+  localStorage.removeItem('blog_must_change_password')
   ElMessage.success('密码已修改')
   pwd.oldPassword = ''
   pwd.newPassword = ''

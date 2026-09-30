@@ -15,18 +15,27 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtil {
 
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_MEMBER = "MEMBER";
+
     private final BlogProperties blogProperties;
 
     private SecretKey key() {
         return Keys.hmacShaKeyFor(blogProperties.getJwt().getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
+    /** 兼容旧调用：默认 ADMIN */
     public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, ROLE_ADMIN);
+    }
+
+    public String generateToken(Long userId, String subject, String role) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + blogProperties.getJwt().getExpirationMs());
         return Jwts.builder()
-                .subject(username)
+                .subject(subject)
                 .claim("uid", userId)
+                .claim("role", role)
                 .issuedAt(now)
                 .expiration(exp)
                 .signWith(key())
@@ -43,6 +52,19 @@ public class JwtUtil {
 
     public String getUsername(String token) {
         return parse(token).getSubject();
+    }
+
+    public String getRole(String token) {
+        Object role = parse(token).get("role");
+        return role == null ? ROLE_ADMIN : String.valueOf(role);
+    }
+
+    public Long getUid(String token) {
+        Object uid = parse(token).get("uid");
+        if (uid instanceof Number n) {
+            return n.longValue();
+        }
+        return uid == null ? null : Long.parseLong(String.valueOf(uid));
     }
 
     public boolean isValid(String token) {

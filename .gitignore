@@ -9,9 +9,22 @@
 *.log
 .env
 .env.local
-# 本地敏感配置（数据库密码等）勿入库
+.env.production
+.env.development
+.env.development.local
+# 本地敏感配置（数据库/Redis 密码等）——绝对不要提交
 **/application-local.yml
 **/application-local.yaml
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.yaml
+# 部署机密（含生产 JWT / AES / DB 密码）
+deploy/.env
+deploy/.env.local
 tools/wushixiong-import/data/
+tools/liaoxuefeng-import/data/
 tools/_probe_js.py
 tools/_probe_js2.py
+tools/_probe_lxf.py
+tools/_probe_lxf_link.py
+tools/_probe_taxonomy.py
+tools/_probe_sort.py

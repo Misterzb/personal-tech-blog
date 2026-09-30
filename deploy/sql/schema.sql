@@ -23,12 +23,31 @@ CREATE TABLE IF NOT EXISTS `user` (
   `password`    VARCHAR(255) NOT NULL                COMMENT '登录密码（BCrypt 加密存储）',
   `nickname`    VARCHAR(64)  DEFAULT NULL           COMMENT '显示昵称',
   `avatar`      VARCHAR(512) DEFAULT NULL           COMMENT '头像 URL',
+  `must_change_password` TINYINT NOT NULL DEFAULT 0 COMMENT '1=登录后必须修改密码',
   `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   `deleted`     TINYINT      NOT NULL DEFAULT 0    COMMENT '逻辑删除标记：0=正常，1=已删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='后台管理员账号表';
+
+-- -----------------------------------------------------------------------------
+-- 表：member（前台会员）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `member` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `phone`       VARCHAR(20)  NOT NULL                COMMENT '手机号（登录账号，唯一）',
+  `password`    VARCHAR(255) NOT NULL                COMMENT '密码（BCrypt）',
+  `nickname`    VARCHAR(64)  NOT NULL                COMMENT '显示昵称',
+  `email`       VARCHAR(128) DEFAULT NULL           COMMENT '邮箱（选填）',
+  `avatar`      VARCHAR(512) DEFAULT NULL           COMMENT '头像 URL',
+  `status`      TINYINT      NOT NULL DEFAULT 1    COMMENT '账号状态：0=禁用，1=正常',
+  `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`     TINYINT      NOT NULL DEFAULT 0    COMMENT '逻辑删除：0=正常，1=已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_phone` (`phone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='前台会员表';
 
 -- -----------------------------------------------------------------------------
 -- 表：category（文章专题/分类）
@@ -78,6 +97,7 @@ CREATE TABLE IF NOT EXISTS `article` (
   `seo_title`       VARCHAR(200) DEFAULT NULL           COMMENT 'SEO 标题（为空时可用文章标题）',
   `seo_description` VARCHAR(500) DEFAULT NULL           COMMENT 'SEO 描述（为空时可用摘要）',
   `is_top`          TINYINT(1)   NOT NULL DEFAULT 0    COMMENT '是否置顶：0=否，1=是',
+  `sort_order`      INT          NOT NULL DEFAULT 0    COMMENT '专题内排序，数值越小越靠前（教程 TOC 等）',
   `published_at`    DATETIME     DEFAULT NULL           COMMENT '首次发布时间（发布时写入）',
   `created_at`      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at`      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
@@ -85,7 +105,9 @@ CREATE TABLE IF NOT EXISTS `article` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_slug` (`slug`),
   KEY `idx_category` (`category_id`),
-  KEY `idx_status_published` (`status`, `published_at`)
+  KEY `idx_category_sort` (`category_id`, `sort_order`, `id`),
+  KEY `idx_status_published` (`status`, `published_at`),
+  FULLTEXT KEY `ft_article_search` (`title`, `summary`, `content_md`) WITH PARSER ngram
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章主表';
 
 -- -----------------------------------------------------------------------------
@@ -128,8 +150,11 @@ CREATE TABLE IF NOT EXISTS `comment` (
   `id`         BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `article_id` BIGINT        NOT NULL                COMMENT '所属文章ID，关联 article.id',
   `parent_id`  BIGINT        NOT NULL DEFAULT 0    COMMENT '父评论ID：0=顶级评论，非0=回复某条评论',
-  `nickname`   VARCHAR(64)   NOT NULL                COMMENT '评论者昵称',
-  `email`      VARCHAR(128)  DEFAULT NULL           COMMENT '评论者邮箱（可选，不对外展示）',
+  `member_id`  BIGINT        DEFAULT NULL           COMMENT '会员ID，关联 member.id',
+  `reply_to_member_id` BIGINT DEFAULT NULL          COMMENT '被回复的会员ID',
+  `nickname`   VARCHAR(64)   NOT NULL                COMMENT '评论者昵称（快照）',
+  `email`      VARCHAR(128)  DEFAULT NULL           COMMENT '评论者邮箱（快照，可选）',
+  `avatar`     VARCHAR(512)  DEFAULT NULL           COMMENT '评论时头像快照',
   `content`    VARCHAR(1000) NOT NULL                COMMENT '评论正文',
   `status`     TINYINT       NOT NULL DEFAULT 0    COMMENT '审核状态：0=待审核，1=已通过，2=已拒绝',
   `ip`         VARCHAR(64)   DEFAULT NULL           COMMENT '评论者 IP（脱敏后存储）',
@@ -137,8 +162,97 @@ CREATE TABLE IF NOT EXISTS `comment` (
   `updated_at` DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
   `deleted`    TINYINT       NOT NULL DEFAULT 0    COMMENT '逻辑删除标记：0=正常，1=已删除',
   PRIMARY KEY (`id`),
-  KEY `idx_article_status` (`article_id`, `status`)
+  KEY `idx_article_status` (`article_id`, `status`),
+  KEY `idx_member` (`member_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章评论表（需后台审核后前台展示）';
+
+-- -----------------------------------------------------------------------------
+-- 表：member_notification（会员通知）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `member_notification` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `member_id`   BIGINT       NOT NULL                COMMENT '接收会员',
+  `type`        VARCHAR(32)  NOT NULL DEFAULT 'comment_reply' COMMENT '类型',
+  `title`       VARCHAR(128) NOT NULL                COMMENT '标题',
+  `content`     VARCHAR(512) DEFAULT NULL           COMMENT '内容',
+  `related_id`  BIGINT       DEFAULT NULL           COMMENT '关联ID',
+  `is_read`     TINYINT      NOT NULL DEFAULT 0    COMMENT '0=未读 1=已读',
+  `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_member_read` (`member_id`, `is_read`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员通知';
+
+-- -----------------------------------------------------------------------------
+-- 表：member_reading_progress（专题阅读进度）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `member_reading_progress` (
+  `id`          BIGINT   NOT NULL AUTO_INCREMENT,
+  `member_id`   BIGINT   NOT NULL,
+  `category_id` BIGINT   NOT NULL,
+  `article_id`  BIGINT   NOT NULL,
+  `updated_at`  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_category` (`member_id`, `category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='专题阅读进度';
+
+-- -----------------------------------------------------------------------------
+-- 表：member_favorite（文章收藏）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `member_favorite` (
+  `id`          BIGINT   NOT NULL AUTO_INCREMENT,
+  `member_id`   BIGINT   NOT NULL,
+  `article_id`  BIGINT   NOT NULL,
+  `created_at`  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_article` (`member_id`, `article_id`),
+  KEY `idx_article` (`article_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章收藏';
+
+-- -----------------------------------------------------------------------------
+-- 表：member_category_sub（专题订阅）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `member_category_sub` (
+  `id`          BIGINT   NOT NULL AUTO_INCREMENT,
+  `member_id`   BIGINT   NOT NULL,
+  `category_id` BIGINT   NOT NULL,
+  `created_at`  DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_member_category` (`member_id`, `category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='专题订阅';
+
+-- -----------------------------------------------------------------------------
+-- 表：announcement（站点公告）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `announcement` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+  `title`       VARCHAR(200) NOT NULL,
+  `content`     VARCHAR(2000) DEFAULT NULL,
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '0=下线 1=上线',
+  `sort_order`  INT          NOT NULL DEFAULT 0,
+  `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`     TINYINT      NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_sort` (`status`, `sort_order`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='站点公告';
+
+-- -----------------------------------------------------------------------------
+-- 表：friend_link（友情链接）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `friend_link` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT,
+  `name`        VARCHAR(64)  NOT NULL,
+  `url`         VARCHAR(512) NOT NULL,
+  `logo`        VARCHAR(512) DEFAULT NULL,
+  `description` VARCHAR(256) DEFAULT NULL,
+  `status`      TINYINT      NOT NULL DEFAULT 1 COMMENT '0=下线 1=上线',
+  `sort_order`  INT          NOT NULL DEFAULT 0,
+  `created_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`  DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted`     TINYINT      NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_status_sort` (`status`, `sort_order`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='友情链接';
 
 -- -----------------------------------------------------------------------------
 -- 表：site_config（站点全局配置，通常仅一条记录）

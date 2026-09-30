@@ -9,7 +9,33 @@ spring:
       max-file-size: 5MB
       max-request-size: 10MB
   profiles:
-    active: local
+    # 本地默认 local；Docker 可通过 SPRING_PROFILES_ACTIVE= 清空后仅用环境变量
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  datasource:
+    # 连接信息由 profile 覆盖：local → application-local.yml；prod → 环境变量
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3307/blog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      max-lifetime: 300000
+      keepalive-time: 60000
+      connection-timeout: 10000
+  # Redis：local / prod 各自配置；库号建议 local=10、prod=0，避免同实例撞键
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DB:10}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2000ms}
+      lettuce:
+        shutdown-timeout: 100ms
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 1
+    encoding: UTF-8
 
 mybatis-plus:
   configuration:
@@ -22,6 +48,18 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    redis:
+      enabled: true
+
 blog:
   jwt:
     secret: ${JWT_SECRET:BlogJwtSecretKeyForPersonalTechBlog2024MustBeLongEnough}
@@ -32,13 +70,30 @@ blog:
   site:
     base-url: ${SITE_BASE_URL:http://localhost:5173}
   cors:
+    # 默认仅本地；生产由 application-prod.yml + 环境变量覆盖，勿在此处写正式域名
     allowed-origins:
       - http://localhost:5173
       - http://localhost:5174
       - http://127.0.0.1:5173
       - http://127.0.0.1:5174
+  security:
+    enabled: ${BLOG_SECURITY_ENABLED:true}
+    public-per-minute: ${BLOG_PUBLIC_RPM:120}
+    search-per-minute: ${BLOG_SEARCH_RPM:30}
+    auth-per-minute: ${BLOG_AUTH_RPM:40}
+    enforce-origin: ${BLOG_ENFORCE_ORIGIN:false}
+    block-missing-origin: ${BLOG_BLOCK_MISSING_ORIGIN:false}
+    encrypt-response: ${BLOG_ENCRYPT_RESPONSE:true}
+    response-aes-key: ${BLOG_RESPONSE_AES_KEY:BlogAesKey-ChangeInProd-32b!}
+    captcha-enabled: ${BLOG_CAPTCHA_ENABLED:true}
+  alert:
+    enabled: ${BLOG_ALERT_ENABLED:false}
+    webhook-url: ${BLOG_ALERT_WEBHOOK:}
+    webhook-type: ${BLOG_ALERT_TYPE:wecom}
+    cooldown-seconds: ${BLOG_ALERT_COOLDOWN:60}
 
 logging:
   level:
     com.blog: info
     com.blog.mapper: warn
+    org.flywaydb: info

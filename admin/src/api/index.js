@@ -1,8 +1,9 @@
 import http from './http'
 
 export const login = (data) => http.post('/api/admin/auth/login', data)
+export const fetchCaptcha = () => http.get('/api/public/captcha')
 export const me = () => http.get('/api/admin/auth/me')
-export const changePassword = (data) => http.post('/api/admin/auth/password', data)
+export const changePassword = (data) => http.post('/api/admin/auth/change-password', data)
 export const dashboard = (params) => http.get('/api/admin/dashboard', { params })
 export const fetchArticles = (params) => http.get('/api/admin/articles', { params })
 export const fetchArticle = (id) => http.get(`/api/admin/articles/${id}`)
@@ -14,6 +15,7 @@ export const deleteCategory = (id) => http.delete(`/api/admin/categories/${id}`)
 export const fetchTags = () => http.get('/api/admin/tags')
 export const saveTag = (data) => http.post('/api/admin/tags', data)
 export const deleteTag = (id) => http.delete(`/api/admin/tags/${id}`)
+export const fetchTaxonomyStats = () => http.get('/api/admin/taxonomy-stats')
 export const fetchProjects = () => http.get('/api/admin/projects')
 export const saveProject = (data) => http.post('/api/admin/projects', data)
 export const deleteProject = (id) => http.delete(`/api/admin/projects/${id}`)
@@ -22,6 +24,20 @@ export const updateCommentStatus = (id, status) => http.put(`/api/admin/comments
 export const deleteComment = (id) => http.delete(`/api/admin/comments/${id}`)
 export const fetchSite = () => http.get('/api/admin/site')
 export const saveSite = (data) => http.post('/api/admin/site', data)
+
+export const fetchMembers = (params) => http.get('/api/admin/members', { params })
+export const updateMemberStatus = (id, status) => http.patch(`/api/admin/members/${id}/status`, { status })
+
+export const fetchAnnouncements = (params) => http.get('/api/admin/announcements', { params })
+export const saveAnnouncement = (data) => http.post('/api/admin/announcements', data)
+export const updateAnnouncement = (id, data) => http.put(`/api/admin/announcements/${id}`, data)
+export const deleteAnnouncement = (id) => http.delete(`/api/admin/announcements/${id}`)
+
+export const fetchFriendLinks = (params) => http.get('/api/admin/friend-links', { params })
+export const saveFriendLink = (data) => http.post('/api/admin/friend-links', data)
+export const updateFriendLink = (id, data) => http.put(`/api/admin/friend-links/${id}`, data)
+export const deleteFriendLink = (id) => http.delete(`/api/admin/friend-links/${id}`)
+
 export const uploadFile = (file) => {
   const fd = new FormData()
   fd.append('file', file)

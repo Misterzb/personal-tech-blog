@@ -19,7 +19,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         String[] origins = blogProperties.getCors().getAllowedOrigins().toArray(new String[0]);
         registry.addMapping("/**")
                 .allowedOrigins(origins.length > 0 ? origins : new String[]{"*"})
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);

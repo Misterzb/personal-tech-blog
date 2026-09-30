@@ -1,48 +1,61 @@
 package com.blog.common;
 
+import com.blog.service.ErrorAlertService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
+    private final ErrorAlertService errorAlertService;
+
     @ExceptionHandler(BusinessException.class)
-    public ApiResponse<Void> handleBusiness(BusinessException e) {
-        return ApiResponse.fail(e.getCode(), e.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
+        HttpStatus status = HttpStatus.OK;
+        if (e.getCode() == 429) {
+            status = HttpStatus.TOO_MANY_REQUESTS;
+        } else if (e.getCode() == 401) {
+            status = HttpStatus.UNAUTHORIZED;
+        } else if (e.getCode() == 403) {
+            status = HttpStatus.FORBIDDEN;
+        }
+        return ResponseEntity.status(status).body(ApiResponse.fail(e.getCode(), e.getMessage()));
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ApiResponse<Void> handleValidation(Exception e) {
+    public ResponseEntity<ApiResponse<Void>> handleValidation(Exception e) {
         String message = "参数校验失败";
         if (e instanceof MethodArgumentNotValidException manv && manv.getBindingResult().getFieldError() != null) {
             message = manv.getBindingResult().getFieldError().getDefaultMessage();
         } else if (e instanceof BindException be && be.getBindingResult().getFieldError() != null) {
             message = be.getBindingResult().getFieldError().getDefaultMessage();
         }
-        return ApiResponse.fail(message);
+        return ResponseEntity.badRequest().body(ApiResponse.fail(message));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    public ApiResponse<Void> handleBadCredentials(BadCredentialsException e) {
-        return ApiResponse.fail(401, "用户名或密码错误");
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail(401, "用户名或密码错误"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ApiResponse<Void> handleAccessDenied(AccessDeniedException e) {
-        return ApiResponse.fail(403, "无权限访问");
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.fail(403, "无权限访问"));
     }
 
     @ExceptionHandler(Exception.class)
-    public ApiResponse<Void> handleOther(Exception e) {
+    public ResponseEntity<ApiResponse<Void>> handleOther(Exception e) {
         e.printStackTrace();
-        return ApiResponse.fail("服务器内部错误: " + e.getMessage());
+        errorAlertService.notifyError("GlobalExceptionHandler", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.fail("服务器内部错误"));
     }
 }

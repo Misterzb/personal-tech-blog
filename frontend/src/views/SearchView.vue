@@ -9,7 +9,7 @@ const searched = ref(false)
 
 async function search() {
   if (!q.value.trim()) return
-  const res = await searchArticles({ q: q.value.trim(), page: 1, size: 20 })
+  const res = await searchArticles({ kw: q.value.trim(), page: 1, size: 20 })
   articles.value = res.data.records || []
   searched.value = true
   document.title = `搜索：${q.value} - 技术实践笔记`

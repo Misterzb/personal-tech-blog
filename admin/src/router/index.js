@@ -9,6 +9,9 @@ import TagsView from '../views/TagsView.vue'
 import ProjectsView from '../views/ProjectsView.vue'
 import CommentsView from '../views/CommentsView.vue'
 import SiteView from '../views/SiteView.vue'
+import MembersView from '../views/MembersView.vue'
+import AnnouncementsView from '../views/AnnouncementsView.vue'
+import FriendLinksView from '../views/FriendLinksView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -26,6 +29,9 @@ const router = createRouter({
         { path: 'tags', component: TagsView },
         { path: 'projects', component: ProjectsView },
         { path: 'comments', component: CommentsView },
+        { path: 'members', component: MembersView },
+        { path: 'announcements', component: AnnouncementsView },
+        { path: 'friend-links', component: FriendLinksView },
         { path: 'site', component: SiteView },
       ],
     },

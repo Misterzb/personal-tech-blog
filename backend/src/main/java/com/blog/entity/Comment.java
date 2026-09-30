@@ -12,8 +12,12 @@ public class Comment {
     private Long id;
     private Long articleId;
     private Long parentId;
+    private Long memberId;
+    /** 回复目标会员（父评论作者） */
+    private Long replyToMemberId;
     private String nickname;
     private String email;
+    private String avatar;
     private String content;
     /** 0 pending 1 approved 2 rejected */
     private Integer status;

@@ -1,5 +1,12 @@
-# Vue 3 + Vite
+# 管理后台（admin）
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+内容管理控制台（Vue 3 + Element Plus）。开发说明见仓库根目录 [README.md](../README.md)。
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+```bash
+npm install
+npm run dev
+```
+
+默认 http://localhost:5174/admin/ ，API 代理到后端 `8080`。
+
+主要能力：文章/专题/标签/项目、评论审核、会员启停、公告与友链、仪表盘统计、强制改密。

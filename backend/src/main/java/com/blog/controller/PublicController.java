@@ -2,30 +2,37 @@ package com.blog.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.common.ApiResponse;
+import com.blog.common.BusinessException;
 import com.blog.common.PageResult;
 import com.blog.config.BlogProperties;
 import com.blog.dto.ArticleVO;
 import com.blog.dto.CommentRequest;
 import com.blog.entity.Category;
 import com.blog.entity.Comment;
+import com.blog.entity.Member;
 import com.blog.entity.Project;
 import com.blog.entity.SiteConfig;
 import com.blog.entity.Tag;
 import com.blog.mapper.CategoryMapper;
 import com.blog.mapper.ProjectMapper;
-import com.blog.mapper.TagMapper;
+import com.blog.entity.Announcement;
+import com.blog.entity.FriendLink;
+import com.blog.service.AnnouncementService;
 import com.blog.service.ArticleService;
+import com.blog.service.CaptchaService;
 import com.blog.service.CommentService;
+import com.blog.service.FriendLinkService;
+import com.blog.service.PublicReadService;
 import com.blog.service.SiteConfigService;
 import com.blog.service.VisitService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,10 +44,18 @@ public class PublicController {
     private final CommentService commentService;
     private final SiteConfigService siteConfigService;
     private final VisitService visitService;
+    private final AnnouncementService announcementService;
+    private final FriendLinkService friendLinkService;
+    private final PublicReadService publicReadService;
+    private final CaptchaService captchaService;
     private final CategoryMapper categoryMapper;
-    private final TagMapper tagMapper;
     private final ProjectMapper projectMapper;
     private final BlogProperties blogProperties;
+
+    @GetMapping("/api/public/captcha")
+    public ApiResponse<Map<String, String>> captcha() {
+        return ApiResponse.ok(captchaService.create());
+    }
 
     @GetMapping("/api/public/site")
     public ApiResponse<SiteConfig> site() {
@@ -61,18 +76,19 @@ public class PublicController {
         return ApiResponse.ok(articleService.getBySlug(slug, true));
     }
 
-    @GetMapping("/api/public/search")
+    @GetMapping({"/api/public/search", "/api/public/articles/search"})
     public ApiResponse<PageResult<ArticleVO>> search(
-            @RequestParam String q,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String kw,
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size) {
-        return ApiResponse.ok(articleService.search(q, page, size));
+        String keyword = (kw != null && !kw.isBlank()) ? kw : q;
+        return ApiResponse.ok(articleService.search(keyword == null ? "" : keyword, page, size));
     }
 
     @GetMapping("/api/public/categories")
     public ApiResponse<List<Category>> categories() {
-        return ApiResponse.ok(categoryMapper.selectList(new LambdaQueryWrapper<Category>()
-                .orderByAsc(Category::getSortOrder).orderByAsc(Category::getId)));
+        return ApiResponse.ok(publicReadService.categoriesUsed());
     }
 
     @GetMapping("/api/public/categories/{slug}")
@@ -81,10 +97,24 @@ public class PublicController {
         return ApiResponse.ok(c);
     }
 
+    @GetMapping("/api/public/categories/{idOrSlug}/toc")
+    public ApiResponse<List<Map<String, Object>>> categoryToc(@PathVariable String idOrSlug) {
+        return ApiResponse.ok(articleService.categoryToc(idOrSlug));
+    }
+
+    @GetMapping("/api/public/announcements")
+    public ApiResponse<List<Announcement>> announcements() {
+        return ApiResponse.ok(announcementService.listActive());
+    }
+
+    @GetMapping("/api/public/friend-links")
+    public ApiResponse<List<FriendLink>> friendLinks() {
+        return ApiResponse.ok(friendLinkService.listActive());
+    }
+
     @GetMapping("/api/public/tags")
     public ApiResponse<List<Tag>> tags() {
-        // 前台只展示「至少挂在一篇已发布文章上」的标签，避免空壳标签误导筛选
-        return ApiResponse.ok(tagMapper.selectUsedByPublishedArticles());
+        return ApiResponse.ok(publicReadService.tagsUsed());
     }
 
     @GetMapping("/api/public/projects")
@@ -102,8 +132,14 @@ public class PublicController {
     }
 
     @PostMapping("/api/public/comments")
-    public ApiResponse<Void> submitComment(@Valid @RequestBody CommentRequest req, HttpServletRequest request) {
-        commentService.submit(req, clientIp(request));
+    public ApiResponse<Void> submitComment(@Valid @RequestBody CommentRequest req,
+                                           Authentication authentication,
+                                           HttpServletRequest request) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof Member member)) {
+            throw new BusinessException(401, "请先登录后再评论");
+        }
+        captchaService.verifyOrThrow(req.getCaptchaId(), req.getCaptchaCode());
+        commentService.submit(req, member, clientIp(request));
         return ApiResponse.ok();
     }
 
@@ -115,14 +151,7 @@ public class PublicController {
 
     @GetMapping("/api/public/home")
     public ApiResponse<Map<String, Object>> home() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("site", siteConfigService.get());
-        map.put("articles", articleService.pagePublic(1, 6, null, null).getRecords());
-        map.put("categories", categoryMapper.selectList(new LambdaQueryWrapper<Category>()
-                .orderByAsc(Category::getSortOrder).last("LIMIT 6")));
-        map.put("projects", projectMapper.selectList(new LambdaQueryWrapper<Project>()
-                .orderByDesc(Project::getIsTop).orderByAsc(Project::getSortOrder).last("LIMIT 4")));
-        return ApiResponse.ok(map);
+        return ApiResponse.ok(publicReadService.home());
     }
 
     @GetMapping(value = "/rss.xml", produces = MediaType.APPLICATION_RSS_XML_VALUE)

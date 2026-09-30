@@ -1,5 +1,6 @@
 package com.blog.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blog.common.BusinessException;
 import com.blog.config.BlogProperties;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +19,24 @@ import java.util.UUID;
 public class UploadService {
 
     private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png", "image/gif", "image/webp");
+    private static final long AVATAR_MAX = 2L * 1024 * 1024;
 
     private final BlogProperties blogProperties;
 
     public String upload(MultipartFile file) {
+        return store(file, null, 0);
+    }
+
+    public String uploadAvatar(MultipartFile file) {
+        return store(file, "avatars", AVATAR_MAX);
+    }
+
+    private String store(MultipartFile file, String subDir, long maxBytes) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件为空");
+        }
+        if (maxBytes > 0 && file.getSize() > maxBytes) {
+            throw new BusinessException("头像大小不能超过 2MB");
         }
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED.contains(contentType)) {
@@ -36,12 +49,14 @@ public class UploadService {
             default -> ".jpg";
         };
         try {
-            Path dir = Paths.get(blogProperties.getUpload().getDir()).toAbsolutePath();
+            Path base = Paths.get(blogProperties.getUpload().getDir()).toAbsolutePath();
+            Path dir = subDir == null ? base : base.resolve(subDir);
             Files.createDirectories(dir);
             String name = UUID.randomUUID().toString().replace("-", "") + ext;
             Path target = dir.resolve(name);
             file.transferTo(target.toFile());
-            return blogProperties.getUpload().getUrlPrefix() + "/" + name;
+            String prefix = blogProperties.getUpload().getUrlPrefix();
+            return subDir == null ? prefix + "/" + name : prefix + "/" + subDir + "/" + name;
         } catch (IOException e) {
             throw new BusinessException("上传失败: " + e.getMessage());
         }

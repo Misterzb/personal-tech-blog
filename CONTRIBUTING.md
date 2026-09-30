@@ -10,7 +10,8 @@
 2. 基于**该平台仓库的主分支**创建功能分支：  
    - GitHub：`git checkout main && git checkout -b feature/your-topic`  
    - Gitee：`git checkout master && git checkout -b feature/your-topic`
-3. 按 [README](README.md) / [README_EN.md](README_EN.md) 完成本地环境
+3. 按 [README](README.md) / [README_EN.md](README_EN.md) 完成本地环境（MySQL 必需；Redis 可选）
+4. 复制 `backend/src/main/resources/application-local.yml.example` → `application-local.yml` 并填写连接信息
 
 ## 分支约定
 
@@ -32,9 +33,10 @@
 ## Pull Request
 
 1. 确保本地可编译/可运行：后端 `mvn -q -DskipTests package`，前台/后台 `npm run build`
-2. 描述改动动机、影响范围、自测步骤
-3. 若涉及数据库，附上 SQL 变更（`deploy/sql/`）说明
-4. **向你所在平台的主分支发起 PR**（GitHub → `main`，Gitee → `master`）
+2. 建议自测：`mvn test -Dtest=FeaturePackIntegrationTest`（需可用的 local 库），或对运行中的 API 执行 `python tools/smoke_feature_pack.py`
+3. 描述改动动机、影响范围、自测步骤
+4. 若涉及数据库，附上 SQL 变更（优先 `backend/src/main/resources/db/migration/V*.sql` Flyway 脚本；`deploy/sql/` 仅作手工参考）说明
+5. **向你所在平台的主分支发起 PR**（GitHub → `main`，Gitee → `master`）
 
 ## 问题反馈
 

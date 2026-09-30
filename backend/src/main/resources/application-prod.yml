@@ -1,0 +1,53 @@
+# 生产 Profile（SPRING_PROFILES_ACTIVE=prod）
+# MySQL / Redis / 密钥 / 域名一律环境变量注入（deploy/.env），勿写死真实密码后提交。
+
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      max-lifetime: 300000
+      keepalive-time: 60000
+      connection-timeout: 10000
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      # 生产独立库号，勿与本地 local 的 database 混用
+      database: ${REDIS_DB:0}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2000ms}
+      lettuce:
+        shutdown-timeout: 100ms
+
+blog:
+  site:
+    base-url: "${SITE_BASE_URL:https://bo.bj.cn}"
+  cors:
+    allowed-origins:
+      - "${SITE_ORIGIN:https://bo.bj.cn}"
+      - "${SITE_ORIGIN_WWW:https://www.bo.bj.cn}"
+  jwt:
+    secret: ${JWT_SECRET:}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  upload:
+    dir: ${UPLOAD_DIR:/app/uploads}
+  security:
+    enforce-origin: true
+    block-missing-origin: false
+    encrypt-response: true
+    captcha-enabled: true
+    response-aes-key: ${BLOG_RESPONSE_AES_KEY:}
+  alert:
+    enabled: ${BLOG_ALERT_ENABLED:false}
+    webhook-url: ${BLOG_ALERT_WEBHOOK:}
+    webhook-type: ${BLOG_ALERT_TYPE:wecom}
+
+logging:
+  level:
+    com.blog: info
+    org.flywaydb: warn

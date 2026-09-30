@@ -43,6 +43,7 @@ public class DataInitializer implements CommandLineRunner {
             user.setUsername("admin");
             user.setPassword(passwordEncoder.encode("admin123"));
             user.setNickname("站长");
+            user.setMustChangePassword(1);
             userMapper.insert(user);
         }
     }

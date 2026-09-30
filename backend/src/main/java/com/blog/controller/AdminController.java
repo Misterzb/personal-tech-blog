@@ -6,7 +6,9 @@ import com.blog.common.BusinessException;
 import com.blog.common.PageResult;
 import com.blog.dto.ArticleSaveRequest;
 import com.blog.dto.ArticleVO;
+import com.blog.dto.CommentAdminVO;
 import com.blog.dto.DashboardVO;
+import com.blog.dto.TaxonomyStatVO;
 import com.blog.entity.*;
 import com.blog.mapper.ArticleTagMapper;
 import com.blog.mapper.CategoryMapper;
@@ -20,9 +22,10 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -33,6 +36,9 @@ public class AdminController {
     private final SiteConfigService siteConfigService;
     private final DashboardService dashboardService;
     private final UploadService uploadService;
+    private final MemberService memberService;
+    private final AnnouncementService announcementService;
+    private final FriendLinkService friendLinkService;
     private final CategoryMapper categoryMapper;
     private final TagMapper tagMapper;
     private final ArticleTagMapper articleTagMapper;
@@ -101,6 +107,26 @@ public class AdminController {
         return ApiResponse.ok(tagMapper.selectList(null));
     }
 
+    /**
+     * 专题/标签用量统计：便于清理「前台无展示数据」的空壳项。
+     * empty* = 已发布文章数为 0（含仅有草稿或完全未挂文）。
+     */
+    @GetMapping("/taxonomy-stats")
+    public ApiResponse<Map<String, Object>> taxonomyStats() {
+        List<TaxonomyStatVO> categories = categoryMapper.selectStats();
+        List<TaxonomyStatVO> tags = tagMapper.selectStats();
+        Map<String, Object> map = new HashMap<>();
+        map.put("categories", categories);
+        map.put("tags", tags);
+        map.put("emptyCategories", categories.stream()
+                .filter(c -> c.getPublishedCount() <= 0)
+                .collect(Collectors.toList()));
+        map.put("emptyTags", tags.stream()
+                .filter(t -> t.getPublishedCount() <= 0)
+                .collect(Collectors.toList()));
+        return ApiResponse.ok(map);
+    }
+
     @PostMapping("/tags")
     public ApiResponse<Tag> saveTag(@RequestBody Tag tag) {
         if (!StringUtils.hasText(tag.getSlug())) {
@@ -157,12 +183,64 @@ public class AdminController {
         return ApiResponse.ok();
     }
 
-    @GetMapping("/comments")
-    public ApiResponse<PageResult<Comment>> comments(
+    @GetMapping("/members")
+    public ApiResponse<PageResult<Member>> members(
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) String kw,
+            @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status) {
-        return ApiResponse.ok(commentService.pageAdmin(page, size, status));
+        String q = StringUtils.hasText(kw) ? kw : keyword;
+        return ApiResponse.ok(memberService.pageAdmin(page, size, q, status));
+    }
+
+    @PatchMapping("/members/{id}/status")
+    public ApiResponse<Void> memberStatus(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
+        Integer status = body.get("status");
+        memberService.updateStatus(id, status);
+        return ApiResponse.ok();
+    }
+
+    @GetMapping("/comments")
+    public ApiResponse<PageResult<com.blog.dto.CommentAdminVO>> comments(
+            @RequestParam(defaultValue = "1") long page,
+            @RequestParam(defaultValue = "20") long size,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Long memberId,
+            @RequestParam(required = false) String nickname) {
+        return ApiResponse.ok(commentService.pageAdmin(page, size, status, memberId, nickname));
+    }
+
+    @GetMapping("/announcements")
+    public ApiResponse<List<Announcement>> announcements() {
+        return ApiResponse.ok(announcementService.listAll());
+    }
+
+    @PostMapping("/announcements")
+    public ApiResponse<Announcement> saveAnnouncement(@RequestBody Announcement announcement) {
+        return ApiResponse.ok(announcementService.save(announcement));
+    }
+
+    @DeleteMapping("/announcements/{id}")
+    public ApiResponse<Void> deleteAnnouncement(@PathVariable Long id) {
+        announcementService.delete(id);
+        return ApiResponse.ok();
+    }
+
+    @GetMapping("/friend-links")
+    public ApiResponse<List<FriendLink>> friendLinks() {
+        return ApiResponse.ok(friendLinkService.listAll());
+    }
+
+    @PostMapping("/friend-links")
+    public ApiResponse<FriendLink> saveFriendLink(@RequestBody FriendLink link) {
+        return ApiResponse.ok(friendLinkService.save(link));
+    }
+
+    @DeleteMapping("/friend-links/{id}")
+    public ApiResponse<Void> deleteFriendLink(@PathVariable Long id) {
+        friendLinkService.delete(id);
+        return ApiResponse.ok();
     }
 
     @PutMapping("/comments/{id}/status")

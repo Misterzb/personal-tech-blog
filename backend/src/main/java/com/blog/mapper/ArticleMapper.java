@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ArticleMapper extends BaseMapper<Article> {
 
@@ -14,28 +15,54 @@ public interface ArticleMapper extends BaseMapper<Article> {
     int incrViewCount(@Param("id") Long id);
 
     @Select("""
-            SELECT DISTINCT a.* FROM article a
-            LEFT JOIN article_tag at ON a.id = at.article_id
-            LEFT JOIN tag t ON at.tag_id = t.id
+            <script>
+            SELECT a.* FROM article a
             WHERE a.deleted = 0 AND a.status = 1
-              AND (a.title LIKE CONCAT('%',#{kw},'%')
-                OR a.summary LIKE CONCAT('%',#{kw},'%')
-                OR a.content_md LIKE CONCAT('%',#{kw},'%')
-                OR t.name LIKE CONCAT('%',#{kw},'%'))
+            <choose>
+              <when test="ftKw != null and ftKw != ''">
+                AND MATCH(a.title, a.summary, a.content_md) AGAINST(#{ftKw} IN BOOLEAN MODE)
+              </when>
+              <otherwise>
+                AND (a.title LIKE CONCAT('%',#{likeKw},'%')
+                  OR a.summary LIKE CONCAT('%',#{likeKw},'%')
+                  OR a.content_md LIKE CONCAT('%',#{likeKw},'%'))
+              </otherwise>
+            </choose>
             ORDER BY a.published_at DESC
             LIMIT #{offset}, #{limit}
+            </script>
             """)
-    List<Article> search(@Param("kw") String kw, @Param("offset") long offset, @Param("limit") long limit);
+    List<Article> search(@Param("ftKw") String ftKw,
+                         @Param("likeKw") String likeKw,
+                         @Param("offset") long offset,
+                         @Param("limit") long limit);
 
     @Select("""
-            SELECT COUNT(DISTINCT a.id) FROM article a
-            LEFT JOIN article_tag at ON a.id = at.article_id
-            LEFT JOIN tag t ON at.tag_id = t.id
+            <script>
+            SELECT COUNT(*) FROM article a
             WHERE a.deleted = 0 AND a.status = 1
-              AND (a.title LIKE CONCAT('%',#{kw},'%')
-                OR a.summary LIKE CONCAT('%',#{kw},'%')
-                OR a.content_md LIKE CONCAT('%',#{kw},'%')
-                OR t.name LIKE CONCAT('%',#{kw},'%'))
+            <choose>
+              <when test="ftKw != null and ftKw != ''">
+                AND MATCH(a.title, a.summary, a.content_md) AGAINST(#{ftKw} IN BOOLEAN MODE)
+              </when>
+              <otherwise>
+                AND (a.title LIKE CONCAT('%',#{likeKw},'%')
+                  OR a.summary LIKE CONCAT('%',#{likeKw},'%')
+                  OR a.content_md LIKE CONCAT('%',#{likeKw},'%'))
+              </otherwise>
+            </choose>
+            </script>
             """)
-    long searchCount(@Param("kw") String kw);
+    long searchCount(@Param("ftKw") String ftKw, @Param("likeKw") String likeKw);
+
+    @Select("""
+            SELECT c.id AS categoryId, c.name AS categoryName,
+                   COALESCE(SUM(a.view_count), 0) AS viewSum
+            FROM category c
+            LEFT JOIN article a ON a.category_id = c.id AND a.deleted = 0 AND a.status = 1
+            WHERE c.deleted = 0
+            GROUP BY c.id, c.name
+            ORDER BY viewSum DESC
+            """)
+    List<Map<String, Object>> categoryViewSums();
 }

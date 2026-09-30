@@ -1,0 +1,13 @@
+---
+description: Git workflow — commit on develop, then merge to main
+alwaysApply: true
+---
+
+# Git 提交分支约定
+
+以后凡是提交代码，一律按下列流程，**不要直接在 main/master 上提交**：
+
+1. 在 `develop` 分支上开发并 `git commit`（分支不存在则从主分支创建）
+2. 提交完成后，再合并到主分支：`main`（GitHub）/ 如需同步 Gitee 的 `master` 再按远程约定处理
+3. 未经用户明确要求，不要 `git push`；需要推送时先推 `develop`，合并后再推主分支
+4. 不要提交密钥文件：`application-local.yml`、`deploy/.env`、`.env.production`、含真实密码的配置

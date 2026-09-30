@@ -1,7 +1,50 @@
-# 复制为 application-local.yml 后填写本机/服务器数据库
-# mvn spring-boot:run -Dspring-boot.run.profiles=local
+# =============================================================================
+# 本地 Profile 示例 → 复制为 application-local.yml（勿提交）
+# 本文件只描述「本机开发」这一套：本机/Docker MySQL + Redis，与生产完全分离。
+#
+# 启动本机依赖（可选）:
+#   cd deploy && docker compose -f docker-compose.yml --env-file .env.local up -d mysql redis
+# 启动后端:
+#   mvn spring-boot:run "-Dspring-boot.run.profiles=local"
+#
+# AES 须与 frontend|admin/.env.development 一致
+# =============================================================================
 spring:
   datasource:
+    # 本地 Compose 映射端口 3307，库名可用 blog（仅本机容器）
     url: jdbc:mysql://127.0.0.1:3307/blog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: root
-    password: your_password
+    password: local_mysql_dev_only
+    hikari:
+      max-lifetime: 300000
+      keepalive-time: 60000
+      connection-timeout: 10000
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      # 本地固定用 10；生产用 0（见 application-prod / deploy/.env）
+      database: 10
+      password: local_redis_dev_only
+      timeout: 2000ms
+      lettuce:
+        shutdown-timeout: 100ms
+
+blog:
+  site:
+    base-url: http://localhost:5173
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:5174
+      - http://127.0.0.1:5173
+      - http://127.0.0.1:5174
+  jwt:
+    secret: M5qkRcb6BMasIlRkBHTzD2UweD0ZnGK45zl7zGKEMhOvIuYH
+  security:
+    enforce-origin: false
+    encrypt-response: true
+    response-aes-key: bVWm2iTKcLbx5HCspnoLFtVsQCFOauJS
+    captcha-enabled: true
+  alert:
+    enabled: false

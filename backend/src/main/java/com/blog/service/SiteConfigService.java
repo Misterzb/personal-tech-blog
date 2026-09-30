@@ -5,6 +5,8 @@ import com.blog.entity.SiteConfig;
 import com.blog.mapper.SiteConfigMapper;
 import com.blog.util.MarkdownUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,6 +15,7 @@ public class SiteConfigService {
 
     private final SiteConfigMapper siteConfigMapper;
 
+    @Cacheable(cacheNames = "site", key = "'default'")
     public SiteConfig get() {
         SiteConfig config = siteConfigMapper.selectOne(new LambdaQueryWrapper<SiteConfig>().last("LIMIT 1"));
         if (config == null) {
@@ -27,8 +30,14 @@ public class SiteConfigService {
         return config;
     }
 
+    @CacheEvict(cacheNames = {"site", "home"}, allEntries = true)
     public SiteConfig save(SiteConfig incoming) {
-        SiteConfig config = get();
+        SiteConfig config = siteConfigMapper.selectOne(new LambdaQueryWrapper<SiteConfig>().last("LIMIT 1"));
+        if (config == null) {
+            config = new SiteConfig();
+            siteConfigMapper.insert(config);
+            config = siteConfigMapper.selectOne(new LambdaQueryWrapper<SiteConfig>().last("LIMIT 1"));
+        }
         config.setSiteName(incoming.getSiteName());
         config.setSiteSubtitle(incoming.getSiteSubtitle());
         config.setIcp(incoming.getIcp());

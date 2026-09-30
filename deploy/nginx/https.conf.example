@@ -1,0 +1,16 @@
+# Optional: ACME challenge only (HTTP-01) before enabling full HTTPS redirect.
+# Use with certbot webroot, then switch to bo.bj.cn-ssl.conf.example.
+
+server {
+    listen 80;
+    server_name bo.bj.cn www.bo.bj.cn;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /data/blog-frontend/dist;
+        default_type text/plain;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}

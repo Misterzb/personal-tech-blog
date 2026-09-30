@@ -7,9 +7,14 @@ const list = ref([])
 const total = ref(0)
 const page = ref(1)
 const status = ref(0)
+const kw = ref('')
+const memberId = ref('')
 
 async function load() {
-  const res = await fetchComments({ page: page.value, size: 20, status: status.value })
+  const params = { page: page.value, size: 20, status: status.value }
+  if (kw.value.trim()) params.kw = kw.value.trim()
+  if (memberId.value !== '' && memberId.value != null) params.memberId = memberId.value
+  const res = await fetchComments(params)
   list.value = res.data.records
   total.value = res.data.total
 }
@@ -30,20 +35,28 @@ onMounted(load)
 
 <template>
   <div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap;align-items:center">
       <h2 style="margin:0">评论审核</h2>
-      <el-select v-model="status" style="width:160px" @change="page=1;load()">
-        <el-option label="待审核" :value="0" />
-        <el-option label="已通过" :value="1" />
-        <el-option label="已拒绝" :value="2" />
-      </el-select>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <el-input v-model="kw" clearable placeholder="昵称/内容" style="width:160px" @keyup.enter="page=1;load()" />
+        <el-input v-model="memberId" clearable placeholder="会员 ID" style="width:120px" @keyup.enter="page=1;load()" />
+        <el-select v-model="status" style="width:140px" @change="page=1;load()">
+          <el-option label="待审核" :value="0" />
+          <el-option label="已通过" :value="1" />
+          <el-option label="已拒绝" :value="2" />
+        </el-select>
+        <el-button type="primary" @click="page=1;load()">查询</el-button>
+      </div>
     </div>
     <el-table :data="list">
       <el-table-column prop="nickname" label="昵称" width="120" />
+      <el-table-column prop="memberId" label="会员ID" width="90" />
+      <el-table-column prop="phone" label="手机号" width="120" />
       <el-table-column prop="articleId" label="文章ID" width="90" />
-      <el-table-column prop="content" label="内容" />
+      <el-table-column prop="parentId" label="父评论" width="90" />
+      <el-table-column prop="content" label="内容" min-width="180" />
       <el-table-column prop="createdAt" label="时间" width="180" />
-      <el-table-column label="操作" width="220">
+      <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
           <el-button link type="success" @click="approve(row, 1)">通过</el-button>
           <el-button link type="warning" @click="approve(row, 2)">拒绝</el-button>
